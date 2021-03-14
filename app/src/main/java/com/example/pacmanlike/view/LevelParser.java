@@ -4,19 +4,13 @@ import android.content.Context;
 
 import com.example.pacmanlike.gamemap.Home;
 import com.example.pacmanlike.activities.SelectionScreen;
-import com.example.pacmanlike.gamemap.tiles.DoorTile;
+
+import com.example.pacmanlike.gamemap.TileFactory;
 import com.example.pacmanlike.main.AppConstants;
+
 import com.example.pacmanlike.objects.Vector;
 import com.example.pacmanlike.gamemap.GameMap;
-import com.example.pacmanlike.gamemap.tiles.CrossroadTile;
-import com.example.pacmanlike.gamemap.tiles.EmptyTile;
-import com.example.pacmanlike.gamemap.tiles.HalfcrossroadTile;
-import com.example.pacmanlike.gamemap.tiles.HomeTile;
-import com.example.pacmanlike.gamemap.tiles.LeftTeleportTile;
-import com.example.pacmanlike.gamemap.tiles.RightTeleportTile;
-import com.example.pacmanlike.gamemap.tiles.StraightTile;
 import com.example.pacmanlike.gamemap.tiles.Tile;
-import com.example.pacmanlike.gamemap.tiles.TurnTile;
 
 import java.io.File;
 import java.io.InputStream;
@@ -30,17 +24,22 @@ public class LevelParser {
     private Scanner _reader;
     private HashMap<String, String> _dictionary = new HashMap<>();
 
+    /**
+     * Initialize parser with name of the file to be parsed and its context
+     * @param fileName File to be parsed
+     * @param context Current context
+     */
     public void init(String fileName, Context context) throws Exception {
-        String storageType = SelectionScreen.INTERNAL;
-        if (SelectionScreen.internalMaps.contains(fileName)) {
-            storageType = SelectionScreen.ASSETS;
+        String storageType = AppConstants.STORAGE_INTERNAL;
+        if (SelectionScreen._internalMaps.contains(fileName)) {
+            storageType = AppConstants.STORAGE_ASSETS;
         }
 
         _reader = null;
-        if (storageType.equals(SelectionScreen.ASSETS)) {
+        if (storageType.equals(AppConstants.STORAGE_ASSETS)) {
             InputStream stream = context.getAssets().open(fileName);
             _reader = new Scanner(stream);
-        } else if (storageType.equals(SelectionScreen.INTERNAL)) {
+        } else if (storageType.equals(AppConstants.STORAGE_INTERNAL)) {
             File file = new File(context.getApplicationContext().getFilesDir(), fileName);
             _reader = new Scanner(file);
         } else{
@@ -48,6 +47,20 @@ public class LevelParser {
         }
     }
 
+    /**
+     * Initializes parser for parsing right from String variable.
+     * Used when initializing parser for import validation.
+     * @param level
+     */
+    public void initImportControl(String level){
+        _reader = new Scanner(level);
+    }
+
+    /**
+     * Parses the file using the initialized Scanner
+     * @return Finished GameMap
+     * @throws Exception
+     */
     public GameMap parse() throws Exception {
         GameMap map = new GameMap();
 
@@ -66,14 +79,14 @@ public class LevelParser {
 
             // Loop parse lines
             String[] line = data.split(",");
+
             for(int x = 0; x < line.length; x++){
-                Tile tile = parseTile(line[x]);
-                map.getMap()[y][x] = tile;
+                map.getMap()[y][x] = map.getMap()[y][x] = TileFactory.createTile(line[x]);
 
                 // Some final things...
                 switch (line[x]){
                     case "A2":
-                        new Home(x,y);
+                        map.setHome(new Home(x,y));
                         break;
                     case "L" :
                         map.setLeftTeleportPosition(new Vector(x,y));
@@ -82,6 +95,7 @@ public class LevelParser {
                         map.setRightTeleportPosition(new Vector(x,y));
                         break;
                 }
+
             }
 
             y++;
@@ -100,6 +114,12 @@ public class LevelParser {
         return map;
     }
 
+    /**
+     * Parses head of the file.
+     * @param map Instance of a GameMap
+     * @param line Whole first line of the file
+     * @throws Exception
+     */
     public void parseHead(GameMap map, String line) throws Exception {
         String[] head = line.split(AppConstants.CSV_DELIMITER);
 
@@ -113,6 +133,10 @@ public class LevelParser {
         parsePowerPelletPositions(map);
     }
 
+    /**
+     * Parses initial position of the pacman.
+     * @param map Instance of GameMap the parser's using
+     */
     private void parsePacPosition(GameMap map){
         // PAC=x;y (where (x,y) are the starting coordinates of pacman)
         String pac = _dictionary.get(AppConstants.PAC_STARTING_KEYWORD);
@@ -122,43 +146,36 @@ public class LevelParser {
         );
     }
 
+    /**
+     * Parses positions of the power pellets
+     * @param map Instance of GameMap the parser's using
+     */
     private void parsePowerPelletPositions(GameMap map){
         // POWER=x1;y1.x2;y2.x3;y3.x4;y4
         // (where (xi,yi) are coordinates of power pellets in the level)
         String value = _dictionary.get(AppConstants.POWER_STARTING_KEYWORD);
-        String[] allPellets = value.split(AppConstants.MORE_DATA_DELIMITER);
         ArrayList<Vector> powerPelletPositions = new ArrayList<>();
 
-        for (String pellet : allPellets){
-            String[] coords = pellet.split(AppConstants.COORDS_DELIMITER);
-            powerPelletPositions.add( new Vector(Integer.parseInt(coords[0]), Integer.parseInt(coords[1])) );
-        }
+        if(value != null) {
+            String[] allPellets = value.split(AppConstants.MORE_DATA_DELIMITER);
 
+            for (String pellet : allPellets) {
+                String[] coords = pellet.split(AppConstants.COORDS_DELIMITER);
+                powerPelletPositions.add(new Vector(Integer.parseInt(coords[0]), Integer.parseInt(coords[1])));
+            }
+        }
         map.setPowerPelletsPosition(powerPelletPositions);
     }
 
-    public Tile parseTile(String tileName) throws Exception {
-        // Tile name is always a letter, there can be a rotation number after (like "S90" or "C")
-        Tile tile;
-
-        switch (tileName.charAt(0)){
-            case 'S' : tile = new StraightTile(tileName.substring(1)); break;
-            case 'T' : tile = new TurnTile(tileName.substring(1)); break;
-            case 'H' : tile = new HalfcrossroadTile(tileName.substring(1)); break;
-            case 'C' : tile = new CrossroadTile(); break;
-            case 'R' : tile = new RightTeleportTile(); break;
-            case 'L' : tile = new LeftTeleportTile(); break;
-            case 'X' : tile = new EmptyTile(); break;
-            case 'A' : tile = new HomeTile(tileName.substring(1)); break;
-            case 'D' : tile = new DoorTile(); break;
-            default: throw new Exception("Wrong tile format.");
-        }
-        return tile;
-    }
-
+    /**
+     * Checks if home's signature is the same as parsed home.
+     * This ensures that this map is correct.
+     * @param map Instance of GameMap the parser's using
+     * @throws Exception When the home is in an incorrect format.
+     */
     public void checkHomeCoords(GameMap map) throws Exception {
         boolean check = true;
-        Vector homeCoords = Home.getInstance().getCoordinates();
+        Vector homeCoords = map.getHome().getCoordinates();
         int y = homeCoords.y;
         for (int i = 0; i < Home.SIZE_X; i++){
             int x = homeCoords.x + i - 1;

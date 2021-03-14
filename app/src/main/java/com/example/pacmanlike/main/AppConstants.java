@@ -5,42 +5,59 @@ import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
 
-import com.example.pacmanlike.gamelogic.GameEngine;
+import com.example.pacmanlike.gamelogic.GameEnginePacman;
 import com.example.pacmanlike.gamemap.GameMap;
 import com.example.pacmanlike.objects.Vector;
 import com.example.pacmanlike.view.LevelView;
 
+/**
+ * Class containing the constants and functions needed to run the game.
+ */
 public class AppConstants {
 
-
+    // game
+    static GameEnginePacman _engine;
     static GameMap _gameMap;
-    static GameEngine _engine;
 
+    // map size
+    public static int MAP_SIZE_X = 7, MAP_SIZE_Y = 9;
+
+    // tile size
+    private static int _blockSize;
+
+    // screen dimensions
     public static int SCREEN_WIDTH,
             SCREEN_HEIGHT;
 
-    public static int MAP_SIZE_X = 7, MAP_SIZE_Y = 9;
+    public static final String LEVEL_NAME = "com.example.pacmanlike.LEVEL_NAME";
+    public static final String SELECTED_LEVEL = "com.example.pacmanlike.SELECTED_LEVEL";
+    public static final String STORAGE_ASSETS = "Assets", STORAGE_INTERNAL = "Internal";
 
-    private static int _blockSize;
-
+    // Game constants
     public static String PAC_STARTING_KEYWORD = "PAC", POWER_STARTING_KEYWORD = "POWER";
     public static String CSV_DELIMITER = ",", KEY_VALUE_DELIMITER = "=", COORDS_DELIMITER = ";", MORE_DATA_DELIMITER = "/";
+    public static char CHAR_CSV_DELIMITER = ',', CHAR_KEY_VALUE = '=', CHAR_COORDS = ';', CHAR_MORE_DATA = '/';
+    public static char CHAR_CSV_NEWLINE = '\n';
+    public static String LEFT_TELEPORT = "LeftTeleport", RIGHT_TELEPORT = "RightTeleport", HOME_TILE = "Home";
+    public static String CSV_EXTENSION = ".csv", HIGHSCORE_EXTENSION = ".hsc";
+    public static String CLIPBOARD_LABEL = "Export a map";
+    public static char CHAR_EMPTY_TILE = 'X', CHAR_HOME_TILE = 'A';
 
-    // public static Bitmap m;
+    // Export and import
+    public static char EXPORT_CSV_DELIMITER = 'x', EXPORT_KEY_VALUE ='k', EXPORT_COORDS = 'c', EXPORT_MORE_DATA = 'm';
+    public static char EXPORT_NEW_LINE = 'n';
+
+    public static int MAX_POWER_PELLETS = 4;
+
 
     /**
-     * Initiates the applciation constants
+     * Initiates the application constants
      * */
     public static void initialization(Context context, GameMap map) {
         _gameMap = map;
         setScreenSize(context);
-
-        _engine = new GameEngine(context);
-        // int a = R.drawable.basicmap;
-       // m = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(context.getResources(), a), MAP_SIZE_X*_blockSize, MAP_SIZE_Y * _blockSize, false);
-
+        _engine = new GameEnginePacman(context);
         LevelView levelView = new LevelView(map);
-
         map.setBackground(levelView.createLevelBitmap(context));
     }
 
@@ -90,7 +107,7 @@ public class AppConstants {
     /**
      * @return GameEngine instance
      * */
-    public static GameEngine getEngine() { return _engine; }
+    public static GameEnginePacman getEngine() { return _engine; }
 
     public static boolean testCenterTile(Vector position) {
 

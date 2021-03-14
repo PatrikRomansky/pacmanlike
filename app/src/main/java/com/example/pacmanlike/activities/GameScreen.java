@@ -15,16 +15,18 @@ import com.example.pacmanlike.view.LevelParser;
 public class GameScreen extends AppCompatActivity {
     GameMap map;
     LevelParser parser = new LevelParser();
+    GameView gameView;
 
+    /**
+     * Reads and parser a level got through Intent.
+     * Then opens SurfaceView, which starts the game.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
 
-        // Comment
-        // New View
-
         Intent intent = getIntent();
-        String levelPath = intent.getStringExtra(SelectionScreen.SELECTED_LEVEL);
+        String levelPath = intent.getStringExtra(AppConstants.SELECTED_LEVEL);
 
         try {
 
@@ -34,8 +36,11 @@ public class GameScreen extends AppCompatActivity {
             // Initialization of the AppConstants class
             AppConstants.initialization(this.getApplicationContext(), map);
 
-            SurfaceView view = new GameView(this, AppConstants.getEngine());
+            gameView = new GameView(this, AppConstants.getEngine());
+
+            SurfaceView view = gameView;
             setContentView(view);
+
 
         } catch (Exception e) {
             e.printStackTrace();
